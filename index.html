@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RP - Presupuestador Exacto</title>
+    <style>
+        :root { 
+            --primary: #e11d48; /* Rojo vibrante */
+            --primary-hover: #be123c; /* Rojo más oscuro para interacción */
+            --bg-dark: #0f172a; /* Fondo general oscuro */
+            --card-bg: #1e293b; /* Fondo de la tarjeta (gris oscuro/negro) */
+            --text-main: #f8fafc; /* Texto principal claro */
+            --text-muted: #94a3b8; /* Texto secundario gris */
+            --border-color: #334155; /* Bordes sutiles */
+        }
+        
+        body { 
+            font-family: -apple-system, sans-serif; 
+            background: var(--bg-dark); 
+            margin: 0; 
+            padding: 15px; 
+            color: var(--text-main); 
+        }
+
+        /* LOGO FLOTANTE ADAPTABLE */
+        .floating-logo {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 1000;
+            width: 120px; /* Tamaño por defecto para computadora */
+            height: auto;
+            display: block;
+            pointer-events: none; /* Permite hacer clic a través del logo si es necesario */
+        }
+
+        /* Ajuste automático para Teléfonos (pantallas menores a 768px) */
+        @media (max-width: 768px) {
+            .floating-logo {
+                width: 70px; /* Tamaño reducido para celulares */
+                top: 10px;
+                left: 10px;
+            }
+            /* Margen superior opcional al cuerpo en móviles por si el logo tapa la tarjeta */
+            body {
+                padding-top: 40px; 
+            }
+        }
+        
+        .card { 
+            background: var(--card-bg); 
+            padding: 20px; 
+            border-radius: 16px; 
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5); 
+            max-width: 440px; 
+            margin: auto; 
+            border: 1px solid var(--border-color);
+        }
+        
+        h2 { 
+            margin-top: 0; 
+            color: var(--primary); 
+            text-align: center; 
+            border-bottom: 2px solid var(--border-color); 
+            padding-bottom: 10px; 
+        }
+        
+        .form-group { 
+            margin-bottom: 15px; 
+        }
+        
+        label { 
+            display: block; 
+            margin-bottom: 6px; 
+            font-weight: 600; 
+            font-size: 14px; 
+            color: var(--text-muted); 
+        }
+        
+        select, input { 
+            width: 100%; 
+            padding: 12px; 
+            border: 1px solid var(--border-color); 
+            border-radius: 10px; 
+            box-sizing: border-box; 
+            font-size: 16px; 
+            background: #0f172a; 
+            color: var(--text-main);
+        }
+        
+        select:focus, input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .scroll-container { 
+            max-height: 350px; 
+            overflow-y: auto; 
+            border: 1px solid var(--border-color); 
+            border-radius: 10px; 
+            padding: 5px; 
+            background: #0f172a; 
+        }
+        
+        .prod-item { 
+            display: flex; 
+            align-items: center; 
+            background: #1e293b; 
+            padding: 10px; 
+            border-radius: 8px; 
+            margin-bottom: 8px; 
+            cursor: pointer; 
+            transition: 0.2s; 
+            border: 1px solid transparent;
+        }
+        
+        .prod-item:hover { 
+            background: #334155; 
+            border-color: var(--primary);
+        }
+        
+        .prod-item input { 
+            width: auto; 
+            margin-right: 10px; 
+            accent-color: var(--primary); 
+        }
+        
+        .btn { 
+            background: var(--primary); 
+            color: white; 
+            border: none; 
+            width: 100%; 
+            padding: 16px; 
+            border-radius: 10px; 
+            font-weight: bold; 
+            font-size: 16px; 
+            margin-top: 10px; 
+            transition: 0.2s; 
+            cursor: pointer; 
+        }
+        
+        .btn:hover {
+            background: var(--primary-hover);
+        }
+        
+        .btn:active { 
+            transform: scale(0.98); 
+        }
+        
+        .results { 
+            margin-top: 20px; 
+            padding: 15px; 
+            background: #181115; 
+            border: 1px solid rgba(225, 29, 72, 0.3); 
+            border-radius: 12px; 
+        }
+        
+        .res-line { 
+            display: flex; 
+            justify-content: space-between; 
+            margin-bottom: 10px; 
+            font-size: 15px; 
+            color: var(--text-muted);
+        }
+        
+        .total-cuota { 
+            font-size: 28px; 
+            color: var(--primary); 
+            font-weight: 800; 
+            text-align: center; 
+            margin-top: 10px; 
+            border-top: 1px dashed rgba(225, 29, 72, 0.4); 
+            padding-top: 10px; 
+        }
+        
+        .highlight { 
+            color: var(--text-main); 
+            font-weight: bold; 
+        }
+    </style>
+</head>
+<body>
+
+<img src="https://i.ibb.co/SwnZgp7y/40-sin-t-tulo-Restaurado-20260522134254.png" alt="Logo" class="floating-logo">
+
+<div class="card">
+    <h2>Royal Prestige</h2>
+    
+    <div class="form-group">
+        <label>Productos del Cliente:</label>
+        <div class="scroll-container" id="listaProd"></div>
+    </div>
+
+    <div class="form-group">
+        <label>% de Entrega Inicial:</label>
+        <select id="percEntrega">
+            <option value="0.10">10% de Entrega</option>
+            <option value="0.20">20% de Entrega</option>
+            <option value="0.30">30% de Entrega</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label>Plazo / Coeficiente:</label>
+        <select id="coeficiente">
+            <option value="0.3745">3 Cuotas (37.45%)</option>
+            <option value="0.2037">6 Cuotas (20.37%)</option>
+            <option value="0.1473">9 Cuotas (14.73%)</option>
+            <option value="0.1196">12 Cuotas (11.96%)</option>
+            <option value="0.1079">14 Cuotas (10.79%)</option>
+            <option value="0.0927" selected>18 Cuotas (9.27%)</option>
+            <option value="0.0800">24 Cuotas (8.00%)</option>
+        </select>
+    </div>
+
+    <button class="btn" onclick="calcular()">CALCULAR AHORA</button>
+
+    <div id="output" class="results" style="display:none;">
+        <div class="res-line"><span>Precio Total Lista:</span> <span class="highlight" id="rLista"></span></div>
+        <div class="res-line"><span>Entrega Inicial:</span> <span class="highlight" id="rEntrega"></span></div>
+        <div class="res-line"><span>Saldo a Financiar:</span> <span class="highlight" id="rSaldo"></span></div>
+        <div class="total-cuota" id="rCuota"></div>
+        <p style="text-align: center; font-size: 11px; margin: 5px 0 0; color: var(--primary); text-transform: uppercase; letter-spacing: 1px;">Valor Cuota Mensual</p>
+    </div>
+</div>
+
+<script>
+    // Lista completa extraída de la Lista de Precios de Marzo 2026
+    const productos = [
+        { nombre: "Juego 15 pcs.", precio: 6600000 },
+        { nombre: "Juego 10 pcs.", precio: 4800000 },
+        { nombre: "Juegos 8 pcs.", precio: 3900000 },
+        { nombre: "Juego 7 pcs.", precio: 2900000 },
+        { nombre: "Juego 5 pcs. Complementario", precio: 2430000 },
+        { nombre: "Juego 5 pcs. Esencial", precio: 2180000 },
+        { nombre: "Olla de 30 lts. con tapa", precio: 2000000 },
+        { nombre: "Olla de 20 lts. con tapa", precio: 1750000 },
+        { nombre: "Olla de 12 lts. con tapa", precio: 1450000 },
+        { nombre: "Olla de 8 lts. con tapa", precio: 1250000 },
+        { nombre: "Olla de 6 lts. con tapa", precio: 1190000 },
+        { nombre: "Olla de 4 lts. con tapa", precio: 930000 },
+        { nombre: "Olla de 3 lts. con tapa", precio: 840000 },
+        { nombre: "Olla de 2 lts. con tapa", precio: 770000 },
+        { nombre: "Olla de 1.5 Qts. con tapa", precio: 690000 },
+        { nombre: "Olla de presión c/reloj 6 litros", precio: 1500000 },
+        { nombre: "Olla de presión c/reloj 10 litros", precio: 1790000 },
+        { nombre: "Pavera Ovalada Royal Prestige", precio: 1630000 },
+        { nombre: "Paellera de 10", precio: 900000 },
+        { nombre: "Paellera de 14", precio: 1350000 },
+        { nombre: "Sarten 26'", precio: 1120000 },
+        { nombre: "Sarten de 20'", precio: 840000 },
+        { nombre: "Juego de Sartenes Gourmet 4pc", precio: 1550000 },
+        { nombre: "Sarten Gourmet 10", precio: 890000 },
+        { nombre: "Sarten Gourmet 8'", precio: 775000 },
+        { nombre: "J. Easy Release 6pc", precio: 3300000 },
+        { nombre: "Easy Release 12'", precio: 1600000 },
+        { nombre: "Easy Release 10'", precio: 1300000 },
+        { nombre: "Easy Release 8'", precio: 1080000 },
+        { nombre: "MaXtractor", precio: 2990000 },
+        { nombre: "Plancha Doble", precio: 920000 },
+        { nombre: "Plancha Redonda", precio: 780000 },
+        { nombre: "Plancha Sencilla", precio: 690000 },
+        { nombre: "Base Magnetica", precio: 83000 },
+        { nombre: "Smart Temp", precio: 58000 },
+        { nombre: "Hervidor 900ml", precio: 280000 },
+        { nombre: "Hervidor 400ml", precio: 235000 },
+        { nombre: "Tazones x4", precio: 420000 },
+        { nombre: "Tazones x2", precio: 190000 },
+        { nombre: "Cafetera 10Tz", precio: 540000 },
+        { nombre: "Cafetera 4Tz", precio: 340000 },
+        { nombre: "Bloque Cuchillos", precio: 2200000 },
+        { nombre: "J. Cuchillos Carne 4pc", precio: 370000 },
+        { nombre: "J. Cuchillos 5pc", precio: 850000 },
+        { nombre: "J. Cuchillos Rebanar", precio: 580000 },
+        { nombre: "J. Cuchillos Churrasco 4pc", precio: 370000 },
+        { nombre: "Santoku 5", precio: 103000 },
+        { nombre: "Hacha RP", precio: 310000 },
+        { nombre: "Cuchillo Multiuso", precio: 300000 },
+        { nombre: "Cuchillo Pelar", precio: 260000 },
+        { nombre: "Tabla Grande", precio: 150000 },
+        { nombre: "Tabla Chica", precio: 120000 },
+        { nombre: "Afilador", precio: 330000 }
+    ];
+
+    const divProd = document.getElementById('listaProd');
+    productos.forEach((p, i) => {
+        divProd.innerHTML += `
+            <div class="prod-item" onclick="document.getElementById('c${i}').click(); event.stopPropagation();">
+                <input type="checkbox" id="c${i}" value="${p.precio}" onclick="event.stopPropagation();">
+                <span>${p.nombre} <br><small style="color: var(--text-muted);">$${p.precio.toLocaleString()}</small></span>
+            </div>
+        `;
+    });
+
+    function calcular() {
+        let totalLista = 0;
+        productos.forEach((_, i) => {
+            if(document.getElementById(`c${i}`).checked) {
+                totalLista += productos[i].precio;
+            }
+        });
+
+        if(totalLista === 0) {
+            alert("Por favor, selecciona al menos un producto.");
+            return;
+        }
+
+        const pEntrega = parseFloat(document.getElementById('percEntrega').value);
+        const montoEntrega = totalLista * pEntrega;
+        const saldoFinanciar = totalLista - montoEntrega;
+        const coef = parseFloat(document.getElementById('coeficiente').value);
+        const valorCuota = saldoFinanciar * coef;
+
+        document.getElementById('rLista').innerText = "$" + totalLista.toLocaleString();
+        document.getElementById('rEntrega').innerText = "$" + montoEntrega.toLocaleString();
+        document.getElementById('rSaldo').innerText = "$" + saldoFinanciar.toLocaleString();
+        document.getElementById('rCuota').innerText = "$" + Math.round(valorCuota).toLocaleString('es-CL');
+        
+        document.getElementById('output').style.display = 'block';
+    }
+</script>
+
+</body>
+</html>
